@@ -27,12 +27,16 @@ def get_user_by_id(id: int) -> UserResponse:
     finally:
         conn.close()
 
-def get_user_by_email(email: str):
+def get_user_by_email(email: str) -> UserResponse:
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-        return cursor.fetchone()
+        row =  cursor.fetchone()
+        if not row:
+            return None
+        columns = [desc[0] for desc in cursor.description]
+        return UserResponse(**dict(zip(columns, row)))
     finally:
         conn.close()
 
@@ -42,7 +46,11 @@ def create_user(email:str,splitwise_id: int, oauth_token: str):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (email, splitwise_id, oauth_token)
-            VALUES (%s, %s, %s);
+            VALUES (%s, %s, %s)
+            ON CONFLICT (email) DO UPDATE
+            SET splitwise_id = EXCLUDED.splitwise_id,
+                oauth_token = EXCLUDED.oauth_token,
+                updated_at = NOW();
         """, (email, splitwise_id, oauth_token))
         conn.commit()
     finally:

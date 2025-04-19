@@ -6,7 +6,7 @@ from .models.models import CurrentUser, ListGrpResponse, MyDeps
 from pydantic_ai import RunContext
 
 @pydantic_agent.tool
-def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
+async def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
     """
     Set the access token for the Splitwise client.
     This function is used to authenticate the user and allow them to access their Splitwise account.
@@ -27,7 +27,7 @@ def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
         raise e
 
 @pydantic_agent.tool
-def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
+async def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
     """
     Get the current user from the Splitwise client.
     This function retrieves the current user's information from Splitwise.
@@ -51,7 +51,7 @@ def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
         raise e
     
 @pydantic_agent.tool
-def get_user_groups(ctx: RunContext[MyDeps]) -> List[ListGrpResponse]:
+async def get_user_groups(ctx: RunContext[MyDeps]) -> List[ListGrpResponse]:
     """
     Get the groups of the current user from the Splitwise client.
     This function retrieves the groups that the current user is a member of.
