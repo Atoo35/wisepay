@@ -59,7 +59,7 @@ async def init_auth():
     return JSONResponse(content={"url": url})
 
 @app.get('/{id}')
-async def get_user_by_id(id: int):
+def get_user_by_id(id: int):
     try:
         # user = db.get_user_by_id(id)
         # if user is None:
@@ -77,7 +77,7 @@ async def get_user_by_id(id: int):
         # if response is None:
         #     return JSONResponse(content={"error": "User not found"}, status_code=404)
         deps = MyDeps(SplitwiseClientWrapper(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET')))
-        response = await pydantic_agent.run("get splitwise current user groups user with id 3",deps=deps,output_type=List[ListGrpResponse])
+        response =  pydantic_agent.run_sync("get splitwise current user groups user with id 3",deps=deps,output_type=List[ListGrpResponse])
         # for group in response.output:
         #     print(f"Group ID: {group.id}, Name: {group.name}, Updated At: {group.updated_at}")
     except Exception as e:

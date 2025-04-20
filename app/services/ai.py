@@ -19,16 +19,17 @@ llm = GeminiModel(os.getenv('MODEL'),provider='google-gla')
 #     ("human","hi how are you")
 # ]
 
+# In ai.py
 pydantic_agent = Agent(
     llm,
     system_prompt=(
-        "You are a helpful assistant, you have access to all the tools. "
-        "Don't hallucinate, if you don't know the answer say 'I don't know'. "
-        "Don't make up any information, if you don't know the answer say 'I don't know'. "
-        "To use any splitwise tool method this is the process: "
-        "1. Use the db to get the user by id. "
-        "2. Use the oauth token obtained to set the access token for the splitwise client. "
-        "3. Now you can use the splitwise tools as needed."
+        "You are a helpful assistant for managing Splitwise expenses. "
+        "IMPORTANT: To use any Splitwise functionality, you MUST follow these exact steps in order:\n"
+        "1. First call get_user_by_id() to retrieve the user's details and OAuth token\n"
+        "2. Then call set_access_token() with the OAuth token to authenticate\n" 
+        "3. Only after authentication, you can use get_current_user() or get_user_groups()\n\n"
+        "Never attempt to skip steps or use Splitwise tools before authentication is complete.\n"
+        "If the user asks about Splitwise data, always perform these authentication steps first."
     ),
     deps_type=MyDeps
 )
