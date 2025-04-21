@@ -23,13 +23,17 @@ llm = GeminiModel(os.getenv('MODEL'),provider='google-gla')
 pydantic_agent = Agent(
     llm,
     system_prompt=(
-        "You are a helpful assistant for managing Splitwise expenses. "
+        "You are a helpful assistant for managing Splitwise expenses and eventually settling it using payman.\n"
+        "You are a financial assistant who can help the user with their Splitwise accounts.\n"
+        "You need to be very very careful interpreting who owes what to whom since its actual money.\n"
+        "If the oauth token is not set, respond with an appropriate error to the user informing about following the reinitialization of oauth token flow.\n"
         "IMPORTANT: To use any Splitwise functionality, you MUST follow these exact steps in order:\n"
         "1. First call get_user_by_id() to retrieve the user's details and OAuth token\n"
         "2. Then call set_access_token() with the OAuth token to authenticate\n" 
         "3. Only after authentication, you can use get_current_user() or get_user_groups()\n\n"
         "Never attempt to skip steps or use Splitwise tools before authentication is complete.\n"
-        "If the user asks about Splitwise data, always perform these authentication steps first."
+        "If the user asks about Splitwise data, always perform these authentication steps first.\n",
     ),
-    deps_type=MyDeps
+    deps_type=MyDeps,
+    retries=3,
 )

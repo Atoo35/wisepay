@@ -12,7 +12,7 @@ from langchain_core.tools import tool
 # from app.services.ai import MyDeps,
 from app.services.ai import pydantic_agent
 from app.models.models import ListGrpResponse, MyDeps
-import app.tools
+import app.tools as tools
 # from splitwise import Splitwise
 from app.models.models import SplitwiseClientWrapper
 

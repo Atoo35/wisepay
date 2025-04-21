@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 from dataclasses import dataclass
+
+from app.services.paymanai_client import PaymanWrapper
 from ..services.splitwise_client import SplitwiseClientWrapper
 
 class SplitwiseUser(BaseModel):
@@ -18,7 +20,8 @@ class CurrentUser(BaseModel):
     
 @dataclass
 class MyDeps:  
-    client: SplitwiseClientWrapper
+    splitwise_client: SplitwiseClientWrapper
+    payman_client: PaymanWrapper
 
 class ListGrpResponse(BaseModel):
     id: int

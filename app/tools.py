@@ -1,7 +1,7 @@
-import json
-from typing import List
 
-from .db.dao import get_user_by_id
+from app.db import dao as db
+import json
+from typing import List, Optional
 from .services.ai import pydantic_agent
 from .models.models import CurrentUser, GetDebtResponse, ListGrpResponse, MyDeps,SplitwiseUser
 from pydantic_ai import RunContext
@@ -22,7 +22,7 @@ def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
     try:
         # convert the str to dictionary maybe using json.loads
         token_dict = json.loads(oauth_token)
-        ctx.deps.client.set_token(token_dict)
+        ctx.deps.splitwise_client.set_token(token_dict)
     except Exception as e:
         print(f'Error setting access token: {e}')
         raise e
@@ -40,7 +40,7 @@ def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
         CurrentUser: The current user's information.
     """
     try:
-        current_user = ctx.deps.client.get_current_user()
+        current_user = ctx.deps.splitwise_client.get_current_user()
         return CurrentUser(
             id=current_user.getId(),
             first_name=current_user.getFirstName(),
@@ -64,7 +64,7 @@ def get_user_groups(ctx: RunContext[MyDeps]) -> List[ListGrpResponse]:
         ListGrpResponse: A response object containing the groups that the current user is a member of.
     """
     try:
-        groups = ctx.deps.client.get_groups()
+        groups = ctx.deps.splitwise_client.get_groups()
         return [
             ListGrpResponse(
                 id=group.getId(),
@@ -90,7 +90,7 @@ def get_debt_by_group(ctx: RunContext[MyDeps], group_id: int) ->List[GetDebtResp
     Returns:
         List[GetDebtResponse]: A response object containing the debts of the current user in the specified group.
     """
-    debts = ctx.deps.client.get_debt_by_group(group_id)
+    debts = ctx.deps.splitwise_client.get_debt_by_group(group_id)
     response = []
     for debt in debts:
         from_user = debt.getFromUser()
@@ -114,7 +114,7 @@ def get_user(ctx: RunContext[MyDeps], user_id: int) -> SplitwiseUser:
         SplitwiseUser: The user's information.
     """
     try:
-        user = ctx.deps.client.get_user(user_id)
+        user = ctx.deps.splitwise_client.get_user(user_id)
         if user is None:
             return None
         return SplitwiseUser(
@@ -127,13 +127,25 @@ def get_user(ctx: RunContext[MyDeps], user_id: int) -> SplitwiseUser:
         print(f'Error getting user by ID: {e}')
         raise e
 
-# def get_all_debts(self,user_id: int):
-#     if not self.client:
-#         raise ValueError("Client not initialized. Please login first.")
-#     groups = self.get_groups()
-#     res = list[GetDebtResponse]()
-#     for group in groups:
-#         debt=self.get_my_debt(group.id, user_id)
-#         if debt:
-#             res.append(debt)
-#     return res
+
+@pydantic_agent.tool
+def get_all_payees(ctx: RunContext[MyDeps], name: Optional[str] = None) -> List[dict]:
+    """
+    Get payees from the Payman client.
+    
+    This function retrieves payees from the Payman client. If a name is provided, 
+    it will filter payees by that name. If no name is provided, it will return all payees.
+
+    Args:
+        ctx: The context object containing the Payman client.
+        name: Optional. The name to filter payees by. If not provided, all payees will be returned.
+
+    Returns:
+        List[dict]: A list of payee objects.
+    """
+    try:
+        payees = ctx.deps.payman_client.get_all_payees(name=name)
+        return payees if payees else []
+    except Exception as e:
+        print(f'Error getting payees: {e}')
+        return []

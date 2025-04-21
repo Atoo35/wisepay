@@ -1,55 +1,67 @@
-import os
 from typing import List
-import streamlit as st
 from dotenv import load_dotenv
+import os
+import gradio as gr
 
 from app.models.models import ListGrpResponse, MyDeps
+from app.services.paymanai_client import PaymanWrapper
 from app.services.splitwise_client import SplitwiseClientWrapper
 from app.services.ai import pydantic_agent
+from pydantic_ai.messages import ModelMessage
+# import app.tools
 import app.tools
-from app.db import dao as db
 
-# Load environment variables from .env
 load_dotenv()
 
-st.title("WisePay")
-deps = MyDeps(SplitwiseClientWrapper(
+deps = MyDeps(
+    splitwise_client=SplitwiseClientWrapper(
             os.getenv('SPLITWISE_API_KEY'),
             os.getenv('SPLITWISE_API_SECRET')
-        ))
+        ),
+    payman_client=PaymanWrapper()
+)
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# For Gradio display
+chat_display = []
+# Maintain a chat history for ai
+chat_history = []
 
-# Render previous messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Handle new prompt
-if prompt := st.chat_input("What is up?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        history = [
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                    if m["role"] in {"user", "assistant"}
-                ]
-        # You can uncomment output_type if you want structured output
+def chatbot(question):
+    global chat_display, chat_history
+    
+    if question:
+        # Add user query to chat display
+        chat_display.append(("User", question))
+        
+        # Create properly formatted history from previous exchanges
+        # Note: We're not using message_history parameter at all since it's causing issues
+        
+        # Get the response from Gemini
         response = pydantic_agent.run_sync(
-            prompt,
+            question,
             deps=deps,
-            history=history,
-            # message_history=history,
-            # output_type=List[ListGrpResponse]
+            message_history=chat_history,  # Pass the chat history
         )
 
-        assistant_reply = str(response.output)  # Or format however you want
-        st.markdown(assistant_reply)
+        new_messages = response.new_messages()
+        chat_history.extend(new_messages)
+    
+        assistant_reply = str(response.output)
+        
+        # Add response to chat display
+        chat_display.append(("Bot", assistant_reply))
+        
+        # Return the updated chat display
+        return chat_display
+    
+    return chat_display
 
-    # Save assistant message properly
-    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+interface = gr.Interface(
+    fn=chatbot,
+    inputs=gr.Textbox(label="Your Question", placeholder="Type your question here and press Enter..."),
+    outputs=gr.Chatbot(label="Chat History"),
+    title="WisePay",
+    description="Ask questions to the Gemini LLM and receive responses after pressing Enter."
+)
+
+interface.launch(server_port=5500)

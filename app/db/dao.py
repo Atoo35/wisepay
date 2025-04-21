@@ -27,7 +27,22 @@ def get_user_by_id(id: int) -> UserResponse:
     finally:
         conn.close()
 
+@pydantic_agent.tool_plain
 def get_user_by_email(email: str) -> UserResponse:
+    """
+    Get user by email.
+    This function retrieves a user from the database using their email address.
+
+    It returns a UserResponse object containing the user's information.
+
+    If the user is not found, it returns None.
+
+    Args:
+        email (str): The email address of the user to retrieve.
+    
+    Returns:
+        UserResponse: The user information if found, otherwise None.
+    """
     conn = get_connection()
     try:
         cursor = conn.cursor()
@@ -40,6 +55,7 @@ def get_user_by_email(email: str) -> UserResponse:
     finally:
         conn.close()
 
+@pydantic_agent.tool_plain
 def create_user(email:str,splitwise_id: int, oauth_token: str):
     conn = get_connection()
     try:

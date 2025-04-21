@@ -6,12 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .services.ai import pydantic_agent
 import os
-import app.tools
+import app.tools as tools
 from app.db import dao as db
 from app.services.splitwise_client import SplitwiseClientWrapper
 from splitwise import Splitwise
 # api_router = APIRouter()
-app = FastAPI()
+tools = FastAPI()
 
 origins = [
     "http://localhost",
@@ -19,7 +19,7 @@ origins = [
     "http://127.0.0.1:5500"
 ]
 
-app.add_middleware(
+tools.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 
-@app.get("/authorize/callback")
+@tools.get("/authorize/callback")
 async def authorize(code: str = None):
     try:
         splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
@@ -48,7 +48,7 @@ async def authorize(code: str = None):
         return JSONResponse(content={"error": str(e)}, status_code=400)
     return {"id": id, "email": email, "spliwise_id":res.splitwise_id, "paymant_id":res.payman_id, "created_at":res.created_at, "updated_at":res.updated_at}
 
-@app.get('/init-auth')
+@tools.get('/init-auth')
 async def init_auth():
     try:
         splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
@@ -58,7 +58,7 @@ async def init_auth():
         return JSONResponse(content={"error": str(e)}, status_code=400)
     return JSONResponse(content={"url": url})
 
-@app.get('/{id}')
+@tools.get('/{id}')
 def get_user_by_id(id: int):
     try:
         # user = db.get_user_by_id(id)
