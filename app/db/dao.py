@@ -1,14 +1,19 @@
+from pydantic_ai import RunContext
 from app.db.connection import get_connection
-from app.db.schemas import UserResponse
-from app.services.ai import pydantic_agent
+from app.db.schemas import UserResponse, UserUpsert
+from app.services.ai import pydantic_agent,MyDeps
 
-def get_user_by_splitwise_id(splitwise_id: int):
-    conn = get_connection()
+@pydantic_agent.tool
+def get_user_by_splitwise_id(ctx: RunContext[MyDeps], splitwise_id: int) -> UserResponse:
+    conn = ctx.deps.db_client
     try:
         cursor = conn.cursor()
-        # cursor.execute("SELECT * FROM users WHERE splitwise_id = %s", (splitwise_id,))
-        cursor.execute("SELECT * FROM users;")
-        return cursor.fetchall()
+        cursor.execute("SELECT * FROM users WHERE splitwise_id = %s", (splitwise_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        columns = [desc[0] for desc in cursor.description]
+        return UserResponse(**dict(zip(columns, row)))
     finally:
         conn.close()
 
@@ -23,12 +28,13 @@ def get_user_by_id(id: int) -> UserResponse:
         if not row:
             return None
         columns = [desc[0] for desc in cursor.description]
+        print(row)
         return UserResponse(**dict(zip(columns, row)))
     finally:
-        conn.close()
+        cursor.close()
 
-@pydantic_agent.tool_plain
-def get_user_by_email(email: str) -> UserResponse:
+@pydantic_agent.tool
+def get_user_by_email(ctx: RunContext[MyDeps],email: str) -> UserResponse:
     """
     Get user by email.
     This function retrieves a user from the database using their email address.
@@ -43,7 +49,7 @@ def get_user_by_email(email: str) -> UserResponse:
     Returns:
         UserResponse: The user information if found, otherwise None.
     """
-    conn = get_connection()
+    conn = ctx.deps.db_client
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
@@ -53,21 +59,28 @@ def get_user_by_email(email: str) -> UserResponse:
         columns = [desc[0] for desc in cursor.description]
         return UserResponse(**dict(zip(columns, row)))
     finally:
-        conn.close()
+        cursor.close()
 
 @pydantic_agent.tool_plain
-def create_user(email:str,splitwise_id: int, oauth_token: str):
+def upsert_user(user: UserUpsert):
+    """
+    This function is used to upsert the user in the database.
+    Make sure to check if the user exists prior to setting values for this function since we dont want to overwrite the data which isnt being filled.
+    For example: It's likely that you would only update payman id at a given time and not splitwise id, here we risk loosing splitwise id if we dont send the current data.
+    """
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO users (email, splitwise_id, oauth_token)
-            VALUES (%s, %s, %s)
+            INSERT INTO users (email, splitwise_id, oauth_token,payman_id)
+            VALUES (%s, %s, %s, %s)
             ON CONFLICT (email) DO UPDATE
             SET splitwise_id = EXCLUDED.splitwise_id,
                 oauth_token = EXCLUDED.oauth_token,
+                payman_id = EXCLUDED.payman_id,
                 updated_at = NOW();
-        """, (email, splitwise_id, oauth_token))
+        """, (user.email, user.splitwise_id, user.oauth_token,user.payman_id))
         conn.commit()
     finally:
-        conn.close()
+        cursor.close()
+

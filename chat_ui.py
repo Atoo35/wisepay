@@ -3,13 +3,12 @@ from dotenv import load_dotenv
 import os
 import gradio as gr
 
-from app.models.models import ListGrpResponse, MyDeps
 from app.services.paymanai_client import PaymanWrapper
 from app.services.splitwise_client import SplitwiseClientWrapper
-from app.services.ai import pydantic_agent
-from pydantic_ai.messages import ModelMessage
+from app.services.ai import pydantic_agent, MyDeps
 # import app.tools
 import app.tools
+from app.db.connection import get_connection
 
 load_dotenv()
 
@@ -18,7 +17,8 @@ deps = MyDeps(
             os.getenv('SPLITWISE_API_KEY'),
             os.getenv('SPLITWISE_API_SECRET')
         ),
-    payman_client=PaymanWrapper()
+    payman_client=PaymanWrapper(),
+    db_client=get_connection()
 )
 
 # For Gradio display
@@ -59,9 +59,9 @@ def chatbot(question):
 interface = gr.Interface(
     fn=chatbot,
     inputs=gr.Textbox(label="Your Question", placeholder="Type your question here and press Enter..."),
-    outputs=gr.Chatbot(label="Chat History"),
+    outputs=gr.Chatbot(label="Chat History",type='tuples'),
     title="WisePay",
-    description="Ask questions to the Gemini LLM and receive responses after pressing Enter."
+    description="Ask questions to the Gemini LLM and receive responses after pressing Enter.",
 )
 
 interface.launch(server_port=5500)

@@ -1,11 +1,15 @@
+from dataclasses import dataclass
 from dotenv import load_dotenv
+from pg8000 import Connection
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic_ai.models.gemini import GeminiModel
 import os
 from pydantic_ai import Agent
-from ..models.models import MyDeps
+
+from app.services.paymanai_client import PaymanWrapper
+from app.services.splitwise_client import SplitwiseClientWrapper
 
 load_dotenv(override=True)
 
@@ -19,21 +23,50 @@ llm = GeminiModel(os.getenv('MODEL'),provider='google-gla')
 #     ("human","hi how are you")
 # ]
 
+@dataclass
+class MyDeps:  
+    splitwise_client: SplitwiseClientWrapper
+    payman_client: PaymanWrapper
+    db_client: Connection
+
 # In ai.py
 pydantic_agent = Agent(
     llm,
-    system_prompt=(
-        "You are a helpful assistant for managing Splitwise expenses and eventually settling it using payman.\n"
-        "You are a financial assistant who can help the user with their Splitwise accounts.\n"
-        "You need to be very very careful interpreting who owes what to whom since its actual money.\n"
-        "If the oauth token is not set, respond with an appropriate error to the user informing about following the reinitialization of oauth token flow.\n"
-        "IMPORTANT: To use any Splitwise functionality, you MUST follow these exact steps in order:\n"
-        "1. First call get_user_by_id() to retrieve the user's details and OAuth token\n"
-        "2. Then call set_access_token() with the OAuth token to authenticate\n" 
-        "3. Only after authentication, you can use get_current_user() or get_user_groups()\n\n"
-        "Never attempt to skip steps or use Splitwise tools before authentication is complete.\n"
-        "If the user asks about Splitwise data, always perform these authentication steps first.\n",
-    ),
+    system_prompt=
+        """
+        You are a helpful assistant for managing Splitwise expenses and eventually settling them using Payman.
+        You act as a financial assistant to help the user with their Splitwise accounts.
+
+        Critical Guidelines:
+        - Be very, very careful when interpreting who owes what to whom — this involves real money.
+        - Double-check everything before responding with any information.
+        - Check twice the owed and owes is correct.
+        - Never mix up people, groups, debtors, or debtees.
+        - IMPORTANT: NEVER show the oauth_token or access token anywhere to the user.
+
+        OAuth Authentication Flow:
+        Before accessing any Splitwise data or functionality, you must follow these steps exactly in order:
+        1. Call get_user_by_id() to retrieve the user's details and OAuth token.
+        2. Then call set_access_token() with the retrieved token to authenticate.
+        3. Only after successful authentication, you may use:
+        - get_current_user()
+        - get_user_groups()
+
+        Never attempt to skip any of these steps.
+        If the OAuth token is not set, respond with an appropriate error and inform the user to follow the reinitialization OAuth token flow.
+
+        Interaction Rules:
+        - Always use the tools provided to you.
+        - If you are unsure about something, ask the user for clarification.
+        - Always refer to people or groups using names, emails, or any human-understandable identifier — never ask for internal IDs.
+        - When requesting user or group identifiers, try to get them via name or email, not IDs.
+        - When updating the sql database using the create_user tool, always make sure to try and fetch the user via id or email whatver is available and fill in the missing update values from this response.
+
+        Test Mode (Payman):
+        When operating in test mode, always:
+        - Use test mode features
+        - Use the test currency for Payman transactions
+        """,
     deps_type=MyDeps,
     retries=3,
 )

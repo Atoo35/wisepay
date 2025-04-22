@@ -1,10 +1,6 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel
-from dataclasses import dataclass
-
-from app.services.paymanai_client import PaymanWrapper
-from ..services.splitwise_client import SplitwiseClientWrapper
 
 class SplitwiseUser(BaseModel):
     id: int
@@ -17,11 +13,6 @@ class CurrentUser(BaseModel):
     first_name: str
     last_name: str
     email: str    
-    
-@dataclass
-class MyDeps:  
-    splitwise_client: SplitwiseClientWrapper
-    payman_client: PaymanWrapper
 
 class ListGrpResponse(BaseModel):
     id: int
@@ -33,3 +24,32 @@ class GetDebtResponse(BaseModel):
     owed_user_id: int
     amount: float
     currency_code: str
+
+class PaymanSearchInput(BaseModel):
+    name : Optional[str] = None
+    contact_email : Optional[str] = None
+
+
+class PaymanBalanceInput(BaseModel):
+    currency_code: Literal['USD', 'USDC', 'TSD'] = 'USD'
+
+class PaymanContactDetails(BaseModel):
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+class PaymanCreatePayeeBase(BaseModel):
+    type: Literal["PAYMAN_WALLET","CRYPTO_ADDRESS","US_ACH","TEST_RAILS"]
+    name: str
+    tags: Optional[List[str]] = None
+
+class PaymanWalletPayee(PaymanCreatePayeeBase):
+    payman_wallet_paytag: str
+
+class PaymanCryptoPayee(PaymanCreatePayeeBase):
+    address: str 
+    chain: str 
+    currency: str
+    contact_details: Optional[PaymanContactDetails] = None
+
+class PaymanTestPayee(PaymanCreatePayeeBase):
+    pass
