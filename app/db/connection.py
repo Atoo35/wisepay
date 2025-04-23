@@ -1,15 +1,12 @@
 import pg8000
-import os
-from dotenv import load_dotenv
-from app.services.ai import pydantic_agent
+from ..config import settings
 
-load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = int(os.getenv("DB_PORT"))
+DB_HOST = settings.DB_HOST
+DB_NAME = settings.DB_NAME
+DB_USER = settings.DB_USER
+DB_PASSWORD = settings.DB_PASSWORD
+DB_PORT = settings.DB_PORT
 
 def get_connection():
     try:

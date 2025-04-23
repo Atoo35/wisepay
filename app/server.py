@@ -13,6 +13,7 @@ import app.tools as tools
 from app.db import dao as db
 from app.services.splitwise_client import SplitwiseClientWrapper
 from splitwise import Splitwise
+from .config import settings
 # api_router = APIRouter()
 app = FastAPI()
 
@@ -34,8 +35,8 @@ app.add_middleware(
 @app.get("/authorize/callback")
 async def authorize(code: str = None):
     try:
-        splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
-        access_token = splitwise.getOAuth2AccessToken(code, os.getenv('REDIRECT_URI'))
+        splitwise = Splitwise(settings.SPLITWISE_API_KEY, settings.SPLITWISE_API_SECRET)
+        access_token = splitwise.getOAuth2AccessToken(code, settings.REDIRECT_URI)
         print(f'access_token: {access_token}')
         splitwise.setOAuth2AccessToken(access_token)
         print('access_token set')
@@ -54,9 +55,9 @@ async def authorize(code: str = None):
 @app.get('/init-auth')
 async def init_auth():
     try:
-        splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
+        splitwise = Splitwise(settings.SPLITWISE_API_KEY, settings.SPLITWISE_API_SECRET)
         # Initialize the Splitwise client with your API key and secret
-        url = splitwise.getOAuth2AuthorizeURL(os.getenv('REDIRECT_URI'))
+        url = splitwise.getOAuth2AuthorizeURL(settings.REDIRECT_URI)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     return JSONResponse(content={"url": url})
@@ -65,7 +66,7 @@ async def init_auth():
 def get_user_by_id(id: int):
     try:
         deps = MyDeps(
-            splitwise_client=SplitwiseClientWrapper(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET')),
+            splitwise_client=SplitwiseClientWrapper(settings.SPLITWISE_API_KEY, settings.SPLITWISE_API_SECRET),
             payman_client=PaymanWrapper(),
             db_client=get_connection()
         )

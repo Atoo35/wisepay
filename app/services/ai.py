@@ -1,27 +1,21 @@
 from dataclasses import dataclass
-from dotenv import load_dotenv
 from pg8000 import Connection
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic_ai.models.gemini import GeminiModel
-import os
+from ..config import settings
 from pydantic_ai import Agent
 
 from app.services.paymanai_client import PaymanWrapper
 from app.services.splitwise_client import SplitwiseClientWrapper
 
-load_dotenv(override=True)
 
-# llm = ChatOllama(model=os.getenv('MODEL'))
-# llm = ChatGoogleGenerativeAI(model=os.getenv('MODEL'))
-llm = GeminiModel(os.getenv('MODEL'),provider='google-gla')
-# llm = OpenAIModel(model_name=os.getenv('MODEL'),provider=OpenAIProvider(base_url='http://localhost:11434/v1'))
-# llm = ChatGoogleGenerativeAI(model=os.getenv('MODEL'))
-
-# input = [
-#     ("human","hi how are you")
-# ]
+# llm = ChatOllama(model=settings.AI_MODEL)
+# llm = ChatGoogleGenerativeAI(model=settings.AI_MODEL)
+llm = GeminiModel(settings.AI_MODEL,provider='google-gla')
+# llm = OpenAIModel(model_name=settings.AI_MODEL,provider=OpenAIProvider(base_url='http://localhost:11434/v1'))
+# llm = ChatGoogleGenerativeAI(model=settings.AI_MODEL)
 
 @dataclass
 class MyDeps:  

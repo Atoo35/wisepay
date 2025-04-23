@@ -1,5 +1,4 @@
 from typing import List
-from dotenv import load_dotenv
 import os
 import gradio as gr
 
@@ -9,13 +8,12 @@ from app.services.ai import pydantic_agent, MyDeps
 # import app.tools
 import app.tools
 from app.db.connection import get_connection
-
-load_dotenv()
+from app.config import settings
 
 deps = MyDeps(
     splitwise_client=SplitwiseClientWrapper(
-            os.getenv('SPLITWISE_API_KEY'),
-            os.getenv('SPLITWISE_API_SECRET')
+            settings.SPLITWISE_API_KEY,
+            settings.SPLITWISE_API_SECRET
         ),
     payman_client=PaymanWrapper(),
     db_client=get_connection()

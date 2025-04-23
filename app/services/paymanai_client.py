@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 import paymanai
 from paymanai.types import PaymentSendPaymentResponse
+from ..config import settings
 import os
 
 from app.models.models import PaymanBalanceInput, PaymanSearchInput,PaymanCryptoPayee, PaymanTestPayee, PaymanWalletPayee
@@ -8,7 +9,7 @@ from app.models.models import PaymanBalanceInput, PaymanSearchInput,PaymanCrypto
 
 class PaymanWrapper:
     def __init__(self):
-        self.client = paymanai.Client(x_payman_api_secret=os.getenv('PAYMAN_API_KEY'))
+        self.client = paymanai.Client(x_payman_api_secret=settings.PAYMAN_API_KEY)
 
     def get_all_payees(self,input: PaymanSearchInput=None):
         try:
