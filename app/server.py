@@ -2,8 +2,7 @@ from typing import List
 from fastapi import FastAPI
 from app.db.connection import get_connection
 from app.db.schemas import UserUpsert
-from app.models.models import ListGrpResponse,CurrentUser
-# from app.services.s_client import SplitwiseUser
+from app.models.models import ListGrpResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -65,21 +64,6 @@ async def init_auth():
 @app.get('/{id}')
 def get_user_by_id(id: int):
     try:
-        # user = db.get_user_by_id(id)
-        # if user is None:
-        #     return JSONResponse(content={"error": "User not found"}, status_code=404)
-        # # Parse JSON string to dict
-        # access_token_dict = json.loads(user.oauth_token)
-        # splitwise_user = SplitwiseUser(access_token_dict)
-
-        # usr = splitwise_user.get_current_user()
-        # if usr is None:
-        #     return JSONResponse(content={"error": "User not found"}, status_code=404)
-        
-        # response  = splitwise_user.get_groups()
-       
-        # if response is None:
-        #     return JSONResponse(content={"error": "User not found"}, status_code=404)
         deps = MyDeps(
             splitwise_client=SplitwiseClientWrapper(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET')),
             payman_client=PaymanWrapper(),
