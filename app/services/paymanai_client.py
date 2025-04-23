@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 import paymanai
+from paymanai.types import PaymentSendPaymentResponse
 import os
 
 from app.models.models import PaymanBalanceInput, PaymanSearchInput,PaymanCryptoPayee, PaymanTestPayee, PaymanWalletPayee
@@ -33,10 +34,10 @@ class PaymanWrapper:
             print(f"Error creating payee: {e}")
             raise e
 
-    def send_payment(self,amount:float,payee_id:str,memo: Optional[str]):
+    def send_payment(self,amount:float,payee_id:str) -> str:
         try:
-            tx = self.client.payments.send_payment(amount_decimal=amount,payee_id=payee_id,memo=memo)
-            return tx
+            tx = self.client.payments.send_payment(amount_decimal=amount,payee_id=payee_id)
+            return tx.model_dump_json()
         except Exception as e:
             print(f'Error sending payment: {e}')
             raise e

@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from .services.ai import pydantic_agent,MyDeps
 from .models.models import CurrentUser, GetDebtResponse, ListGrpResponse, PaymanBalanceInput, PaymanCryptoPayee, PaymanSearchInput, PaymanTestPayee, PaymanWalletPayee,SplitwiseUser
 from pydantic_ai import RunContext
+from paymanai.types import PaymentSendPaymentResponse
 
 @pydantic_agent.tool
 def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
@@ -215,14 +216,19 @@ def create_payman_payee(ctx: RunContext[MyDeps], input: PaymanWalletPayee | Paym
         return str(e)
         
 @pydantic_agent.tool
-def send_payment(ctx: RunContext[MyDeps], amount:float,payee_id:str,memo: Optional[str]):
+def send_payment(ctx: RunContext[MyDeps], amount:float,payee_id:str) -> dict:
     """
+    This function sends transaction to the desired payee.
     
     Args:
-    amount is float so convert to float if an int is provided
+    amount:  is float so convert to float if an int is provided
+    payee_id: the payman id of the user
+
+    Returns:
+    dict: json key value pair
     """
     try:
-        tx = ctx.deps.payman_client.send_payment(amount=amount,payee_id=payee_id,memo=memo)
+        tx = ctx.deps.payman_client.send_payment(amount=amount,payee_id=payee_id)
         return tx
     except Exception as e:
         print(f'Error sending payment, {e}')
