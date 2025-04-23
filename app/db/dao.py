@@ -28,13 +28,12 @@ def get_user_by_id(id: int) -> UserResponse:
         if not row:
             return None
         columns = [desc[0] for desc in cursor.description]
-        print(row)
         return UserResponse(**dict(zip(columns, row)))
     finally:
         cursor.close()
 
-@pydantic_agent.tool
-def get_user_by_email(ctx: RunContext[MyDeps],email: str) -> UserResponse:
+@pydantic_agent.tool_plain
+def get_user_by_email(email: str) -> UserResponse:
     """
     Get user by email.
     This function retrieves a user from the database using their email address.
@@ -49,7 +48,7 @@ def get_user_by_email(ctx: RunContext[MyDeps],email: str) -> UserResponse:
     Returns:
         UserResponse: The user information if found, otherwise None.
     """
-    conn = ctx.deps.db_client
+    conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))

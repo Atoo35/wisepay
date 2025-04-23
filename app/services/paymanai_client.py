@@ -1,3 +1,4 @@
+from typing import Dict, Optional
 import paymanai
 import os
 
@@ -14,7 +15,7 @@ class PaymanWrapper:
             return payees
         except Exception as e:
             print(f"Error fetching payees: {e}")
-            return None
+            raise e
         
     def get_balance(self, input: PaymanBalanceInput):
         try:
@@ -22,12 +23,20 @@ class PaymanWrapper:
             return balance
         except Exception as e:
             print(f"Error fetching balance: {e}")
-            return None
+            raise e
         
     def create_payee(self, input: PaymanCryptoPayee | PaymanWalletPayee | PaymanTestPayee):
-        print(input)
         try:
             payee = self.client.payments.create_payee(**input.model_dump(exclude_none=True))
             return payee
         except Exception as e:
             print(f"Error creating payee: {e}")
+            raise e
+
+    def send_payment(self,amount:float,payee_id:str,memo: Optional[str]):
+        try:
+            tx = self.client.payments.send_payment(amount_decimal=amount,payee_id=payee_id,memo=memo)
+            return tx
+        except Exception as e:
+            print(f'Error sending payment: {e}')
+            raise e

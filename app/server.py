@@ -1,17 +1,21 @@
 from typing import List
 from fastapi import FastAPI
-from app.models.models import MyDeps,ListGrpResponse,CurrentUser
+from app.db.connection import get_connection
+from app.db.schemas import UserUpsert
+from app.models.models import ListGrpResponse,CurrentUser
 # from app.services.s_client import SplitwiseUser
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from .services.ai import pydantic_agent
+
+from app.services.paymanai_client import PaymanWrapper
+from .services.ai import pydantic_agent,MyDeps
 import os
 import app.tools as tools
 from app.db import dao as db
 from app.services.splitwise_client import SplitwiseClientWrapper
 from splitwise import Splitwise
 # api_router = APIRouter()
-tools = FastAPI()
+app = FastAPI()
 
 origins = [
     "http://localhost",
@@ -19,7 +23,7 @@ origins = [
     "http://127.0.0.1:5500"
 ]
 
-tools.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
@@ -28,7 +32,7 @@ tools.add_middleware(
 )
 
 
-@tools.get("/authorize/callback")
+@app.get("/authorize/callback")
 async def authorize(code: str = None):
     try:
         splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
@@ -41,14 +45,14 @@ async def authorize(code: str = None):
         email = user.getEmail()
         # res = db.get_user_by_email(user.getEmail())
         # if res is None:
-        db.create_user(email, id, access_token)
+        db.upsert_user(UserUpsert(email=email,splitwise_id=id,oauth_token=access_token))
         res = db.get_user_by_email(email)
     except Exception as e:
         print(f'Error: {e}')
         return JSONResponse(content={"error": str(e)}, status_code=400)
     return {"id": id, "email": email, "spliwise_id":res.splitwise_id, "paymant_id":res.payman_id, "created_at":res.created_at, "updated_at":res.updated_at}
 
-@tools.get('/init-auth')
+@app.get('/init-auth')
 async def init_auth():
     try:
         splitwise = Splitwise(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET'))
@@ -58,7 +62,7 @@ async def init_auth():
         return JSONResponse(content={"error": str(e)}, status_code=400)
     return JSONResponse(content={"url": url})
 
-@tools.get('/{id}')
+@app.get('/{id}')
 def get_user_by_id(id: int):
     try:
         # user = db.get_user_by_id(id)
@@ -76,8 +80,12 @@ def get_user_by_id(id: int):
        
         # if response is None:
         #     return JSONResponse(content={"error": "User not found"}, status_code=404)
-        deps = MyDeps(SplitwiseClientWrapper(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET')))
-        response =  pydantic_agent.run_sync("get splitwise current user groups user with id 3",deps=deps,output_type=List[ListGrpResponse])
+        deps = MyDeps(
+            splitwise_client=SplitwiseClientWrapper(os.getenv('SPLITWISE_API_KEY'), os.getenv('SPLITWISE_API_SECRET')),
+            payman_client=PaymanWrapper(),
+            db_client=get_connection()
+        )
+        response =  pydantic_agent.run_sync(f"get splitwise current user groups user with id {id}",deps=deps,output_type=List[ListGrpResponse])
         # for group in response.output:
         #     print(f"Group ID: {group.id}, Name: {group.name}, Updated At: {group.updated_at}")
     except Exception as e:

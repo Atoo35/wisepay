@@ -1,7 +1,7 @@
 
 from app.db import dao as db
 import json
-from typing import List, Optional
+from typing import Dict, List, Optional
 from .services.ai import pydantic_agent,MyDeps
 from .models.models import CurrentUser, GetDebtResponse, ListGrpResponse, PaymanBalanceInput, PaymanCryptoPayee, PaymanSearchInput, PaymanTestPayee, PaymanWalletPayee,SplitwiseUser
 from pydantic_ai import RunContext
@@ -25,7 +25,7 @@ def set_access_token(ctx: RunContext[MyDeps], oauth_token: str) -> None:
         ctx.deps.splitwise_client.set_token(token_dict)
     except Exception as e:
         print(f'Error setting access token: {e}')
-        raise e
+        return str(e)
 
 @pydantic_agent.tool
 def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
@@ -49,7 +49,7 @@ def get_current_user(ctx: RunContext[MyDeps]) -> CurrentUser:
         )
     except Exception as e:
         print(f'Error getting current user: {e}')
-        raise e
+        return str(e)
     
 @pydantic_agent.tool
 def get_user_groups(ctx: RunContext[MyDeps]) -> List[ListGrpResponse]:
@@ -75,7 +75,7 @@ def get_user_groups(ctx: RunContext[MyDeps]) -> List[ListGrpResponse]:
         ]
     except Exception as e:
         print(f'Error getting user groups: {e}')
-        raise e
+        return str(e)
 
 @pydantic_agent.tool
 def get_debt_by_group(ctx: RunContext[MyDeps], group_id: int) ->List[GetDebtResponse]:
@@ -125,7 +125,7 @@ def get_user(ctx: RunContext[MyDeps], user_id: int) -> SplitwiseUser:
         )
     except Exception as e:
         print(f'Error getting user by ID: {e}')
-        raise e
+        return str(e)
 
 
 @pydantic_agent.tool
@@ -150,7 +150,7 @@ def get_all_payees(ctx: RunContext[MyDeps], input: PaymanSearchInput = None) -> 
         return payees if payees else []
     except Exception as e:
         print(f'Error getting payees: {e}')
-        raise e
+        return str(e)
     
 @pydantic_agent.tool
 def get_payman_balance(ctx: RunContext[MyDeps], input: PaymanBalanceInput) -> float:
@@ -184,7 +184,7 @@ def get_payman_balance(ctx: RunContext[MyDeps], input: PaymanBalanceInput) -> fl
         return balance if balance else 0.0
     except Exception as e:
         print(f'Error getting payman balance: {e}')
-        raise e
+        return str(e)
     
 @pydantic_agent.tool
 def create_payman_payee(ctx: RunContext[MyDeps], input: PaymanWalletPayee | PaymanCryptoPayee | PaymanTestPayee):
@@ -212,5 +212,18 @@ def create_payman_payee(ctx: RunContext[MyDeps], input: PaymanWalletPayee | Paym
         return payee
     except Exception as e:
         print(f"Error creating payee: {e}")
-        raise e
+        return str(e)
         
+@pydantic_agent.tool
+def send_payment(ctx: RunContext[MyDeps], amount:float,payee_id:str,memo: Optional[str]):
+    """
+    
+    Args:
+    amount is float so convert to float if an int is provided
+    """
+    try:
+        tx = ctx.deps.payman_client.send_payment(amount=amount,payee_id=payee_id,memo=memo)
+        return tx
+    except Exception as e:
+        print(f'Error sending payment, {e}')
+        return str(e)
