@@ -73,9 +73,25 @@ pip install -r requirements.txt
    Create a `.env` file with the following variables:
 
 ```
-SPLITWISE_API_KEY=your_splitwise_api_key
-SPLITWISE_API_SECRET=your_splitwise_api_secret
-REDIRECT_URI=your_redirect_uri
+# AI Model Configuration
+AI_MODEL=
+GEMINI_API_KEY=
+
+# Splitwise OAuth Credentials
+SPLITWISE_API_KEY=
+SPLITWISE_API_SECRET=
+REDIRECT_URI=
+
+# Database Configuration
+DB_HOST=
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+DB_PORT=
+
+# External APIs
+PAYMAN_API_KEY=
+
 ```
 
 ## Initial Setup and Authentication
