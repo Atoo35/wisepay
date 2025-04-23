@@ -166,11 +166,3 @@ After the initial setup, you can use the Gradio chat interface for all operation
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
-
-## License
-
-[Specify your license here]
-
-## Support
-
-For support, please [create an issue](repository-issues-url) or contact the maintainers.
